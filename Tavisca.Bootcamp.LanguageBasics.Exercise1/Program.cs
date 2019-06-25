@@ -5,8 +5,8 @@ namespace Tavisca.Bootcamp.LanguageBasics.Exercise1
 {
     class Program
     {
-        static string missing = "?";
-        static int impossible = -1;
+        const string missingCharacter = "?";
+        const int errorCode = -1;
 
         static void Main(string[] args)
         {
@@ -19,10 +19,11 @@ namespace Tavisca.Bootcamp.LanguageBasics.Exercise1
             
             try
             {
-                Test("23*1k3=628", 4);
+                Test("23*1??3=628", 4);
             }
             catch (FormatException fe)
             {
+                //This will print the type of the exception tracing back to the class hierarchy
                 Console.WriteLine(fe.GetType().FullName);
                 Console.WriteLine(fe.Message);
             }
@@ -61,35 +62,39 @@ namespace Tavisca.Bootcamp.LanguageBasics.Exercise1
             //check for null string
 
             if (String.IsNullOrEmpty(equation))
-                throw new ArgumentException("argument cannot be null or empty", "equation");
+                throw new ArgumentException("argument cannot be null or empty", nameof(equation));
 
             //Splitting string a*b=c into a,b,c
             string[] splitEquation = equation.Split(new Char[] { '*', '=' });
 
             //check for equation form , i.e. a*b=c
             if (splitEquation.Length != 3)
-                throw new ArgumentException("argument must be of the form a * b = c", "equation");
+                throw new ArgumentException("argument must be of the form a * b = c", nameof(equation));
 
             string number1 = splitEquation[0];
             string number2 = splitEquation[1];
             string result = splitEquation[2];
 
             // check for only one ? mark and no other characters
-            if (!Regex.IsMatch(splitEquation[0], @"^[0-9?0-9]+$" ) || !Regex.IsMatch(splitEquation[1], @"^[0-9?0-9]+$") || !Regex.IsMatch(splitEquation[2], @"^[0-9?0-9]+$"))
-                throw new FormatException("enter string in correct format(just one ? mark and all other digits)");
+            if (checkPattern(number1) || checkPattern(number2) || checkPattern(result))
+                throw new FormatException("enter string in correct format (just one ? mark and all other digits)");
 
             //Case1: num1 has ?
 
-            if (number1.Contains(missing))
+            if (number1.Contains(missingCharacter))
             {
-                return FindNumberBeforeAssignment(number1, number2, result);
+                int calculatedNumber = GetCalculatedNumber(number1, number2, result);
+                int missingDigit = GetMissingNumber(number1, calculatedNumber.ToString());
+                return missingDigit;
             }
 
             //Case2: num2 has ?
 
-            else if (number2.Contains(missing))
+            else if (number2.Contains(missingCharacter))
             {
-                return FindNumberBeforeAssignment(number2, number1, result);
+                int calculatedNumber = GetCalculatedNumber(number2, number1, result);
+                int missingDigit = GetMissingNumber(number2, calculatedNumber.ToString());
+                return missingDigit;
             }
 
             //Case3: res has ?
@@ -102,14 +107,23 @@ namespace Tavisca.Bootcamp.LanguageBasics.Exercise1
                 Int32.TryParse(number2, out num2);
 
                 //calculating actual result
-                int temp = num1 * num2;
-                string temp2 = temp.ToString();
+                int calculatedNumber = num1 * num2;
 
-                return GetMissingNumber(result, temp2);
+                int missingDigit = GetMissingNumber(result, calculatedNumber.ToString());
+                return missingDigit;
             }
         }
 
-        public static int FindNumberBeforeAssignment(string number1, string number2, string result)
+
+        public static bool checkPattern(string number)
+        {
+            if (!Regex.IsMatch(number, @"^[0-9]*[?]?[0-9]*$"))
+                return true;
+            else
+                return false;
+        }
+
+        public static int GetCalculatedNumber(string number1, string number2, string result)
         {
             int num2 = 0, res = 0;
 
@@ -118,17 +132,15 @@ namespace Tavisca.Bootcamp.LanguageBasics.Exercise1
             Int32.TryParse(number2, out num2);
             Int32.TryParse(result, out res);
 
-            double tempNumber = (double) res / num2;
+            double calculatedNumber = (double) res / num2;
 
             //Checking for decimal in result(c)
-            if (tempNumber - Convert.ToInt32(tempNumber) == 0)
+            if (calculatedNumber - Convert.ToInt32(calculatedNumber) == 0)
             {
 
-                string temp = tempNumber.ToString();
-
-                return GetMissingNumber(number1, temp);
+                return (int)calculatedNumber;
             }
-            return impossible;
+            return errorCode;
         }
 
         public static int GetMissingNumber(string equationValue, string calculatedValue)
@@ -136,13 +148,13 @@ namespace Tavisca.Bootcamp.LanguageBasics.Exercise1
             //checking whether equation number and temporary number are of same magnitude
             if (equationValue.Length == calculatedValue.Length)
             {
-                //Finding ? to replace missing number 
-                int index = equationValue.IndexOf('?');
+                //Finding ? to replacemissingCharacter number 
+                int index = equationValue.IndexOf(missingCharacter);
 
                 // this is to avoid returning ASCII value of the string instead it returns the number in int type
                 return calculatedValue[index] - '0';
             }
-            return impossible;
+            return errorCode;
         }
     }
 }
